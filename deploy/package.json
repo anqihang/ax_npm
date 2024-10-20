@@ -1,0 +1,18 @@
+{
+  "name": "@anqihang/deploy_zip",
+  "version": "1.0.0",
+  "description": "deploy zip to remote",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "deploy"
+  ],
+  "author": "anqihang0106@outlook.com",
+  "license": "ISC",
+  "dependencies": {
+    "@types/archiver": "^6.0.2",
+    "node-ssh": "^13.2.0"
+  }
+}
