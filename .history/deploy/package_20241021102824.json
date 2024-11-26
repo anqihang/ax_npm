@@ -1,6 +1,6 @@
 {
-  "name": "@anqihang/deploy",
-  "version": "1.0.3",
+  "name": "@anqihang/deploy_zip",
+  "version": "1.0.0",
   "description": "deploy zip to remote",
   "main": "index.ts",
   "scripts": {
@@ -13,7 +13,6 @@
   "license": "ISC",
   "dependencies": {
     "@types/archiver": "^6.0.2",
-    "archiver": "^7.0.1",
     "node-ssh": "^13.2.0"
   }
 }

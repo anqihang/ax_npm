@@ -19,54 +19,54 @@ const readInput = createInterface({
   input: process.stdin,
   output: process.stdout,
 });
-export default class Deploy {
+class Deploy {
   // 本地路径
   localPath: string = "";
   // 远程路径
   remotePath: string = "";
   // 服务器地址
   host: string = "";
-  // 服务器上最多保存几个版本的压缩包
-  fileNum: number = 0;
   // 端口
   port: number = 0;
-  password: string = "";
-  // 电脑密钥
-  privateKeyPath: string = "";
+  // 服务器上最多保存几个版本的压缩包
+  fileNum: number = 0;
   // 用户名
   username: string = "";
+  password: string = "";
+  // 电脑密钥
+  privateKey: string = "";
   constructor(
     localPath: string,
     remotePath: string,
     host: string,
-    password?: string,
-    privateKeyPath?: string,
-    fileNum: number = 3,
     port: number = 22,
-    username: string = "root"
+    fileNum: number = 3,
+    username: string = "root",
+    password?: string,
+    privateKey?: string
   ) {
     this.localPath = localPath;
     this.remotePath = remotePath;
     this.host = host;
-    password && (this.password = password);
-    privateKeyPath && (this.privateKeyPath = privateKeyPath);
-    this.fileNum = fileNum;
     this.port = port;
+    this.fileNum = fileNum;
     this.username = username;
+    password && (this.password = password);
+    privateKey && (this.privateKey = privateKey);
   }
 
   /**
    * @description 压缩dist文件夹成.zip并上传到服务器,在服务器更新历史.zip文件并解压最新的.zip文件为dist文件夹
    */
   deploy() {
-    const output = fs.createWriteStream(`${this.localPath}\\dist.zip`);
+    const output = fs.createWriteStream("/dist.zip");
     output.on("close", function () {
       console.log(archive.pointer() + " total bytes");
       console.log("archiver has been finalized and the output file descriptor has closed.");
     });
     archive.pipe(output);
     // 压缩包里文件在压缩包根目录下
-    archive.directory(`${this.localPath}\\dist`, false);
+    archive.directory("/dist", false);
     archive.finalize();
     // ssh连接
     ssh
@@ -75,7 +75,7 @@ export default class Deploy {
         port: this.port,
         username: this.username,
         password: this.password || void 0,
-        privateKey: this.privateKeyPath ? fs.readFileSync(this.privateKeyPath) : void 0,
+        privateKey: this.privateKey || void 0,
       })
       .then(async () => {
         console.log("Connected");
@@ -103,7 +103,7 @@ export default class Deploy {
           });
         });
         const yn: string = await new Promise((resolve) => {
-          readInput.question("确定发布版本么?（y/n): ", (answer) => {
+          readInput.question("确定发布版本么?（y/n)", (answer) => {
             resolve(answer);
           });
         });
@@ -115,14 +115,16 @@ export default class Deploy {
         }
         // 上传压缩包
         console.log("开始上传压缩包...");
-        ssh.putFile(`${this.localPath}\\dist.zip`, `${this.remotePath}/dist_${version}.zip`).then(async () => {
-          console.log("历史版本更新中...");
+        ssh.putFile(`${this.localPath}/dist.zip`, `${this.remotePath}/dist_${version}.zip`).then(async () => {
+          console.log("历史版本更新.");
           // 删除旧版本压缩包
           while (fileList.length >= this.fileNum) {
+            console.log("历史版本更新..");
             await ssh.execCommand(`rm ${fileList[0]?.name} -f`, {
               cwd: this.remotePath,
             });
             fileList.shift();
+            console.log("历史版本更新...");
           }
           console.log("更新版本...");
           // 删除dist文件夹
@@ -132,7 +134,6 @@ export default class Deploy {
               console.log("版本更新完成！");
               // 断开连接
               ssh.dispose();
-              process.exit(0);
             });
           });
         });
