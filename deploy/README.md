@@ -1,20 +1,21 @@
 # install
 
 ```cmd
-npm install
+npm install @anqihang/deploy@latest
 ```
 
 ```js
 import Deploy fro "@anqihang/deploy";
 const deploy = new Deploy({
-    localPath: string;
-    remotePath: string;
-    host: string;
-    password?: string;
+    localPath: string; // 本地路径C:\\Web\\project_name
+    remotePath: string;// 服务器路径 /home/Web/project_name
+    host: string;// 服务器IP地址 
+    password?: string; // 服务器密码
     privateKeyPath?: string;
-    fileNum?: number;
-    port?: number;
-    username?: string;
+    fileNum?: number; // 服务器存在的dist.zip版本数量 3
+    port?: number; // 服务器SSH端口 22
+    username?: string;// 服务器用户名 root
+    fileName?: string; // 服务器dist.zip文件名 dist.zip
 });
 deploy.run();
 ```

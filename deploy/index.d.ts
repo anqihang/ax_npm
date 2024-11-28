@@ -12,5 +12,6 @@ declare module "Deploy" {
     fileNum?: number;
     port?: number;
     username?: string;
+    fileName?: string;
   }): void;
 }

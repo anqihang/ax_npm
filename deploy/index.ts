@@ -35,6 +35,8 @@ export default class Deploy {
   privateKeyPath: string = "";
   // 用户名
   username: string = "";
+  // 传输文件名称
+  fileName: string = "dist";
   constructor(options: {
     localPath: string;
     remotePath: string;
@@ -59,14 +61,16 @@ export default class Deploy {
    * @description 压缩dist文件夹成dist.zip并上传到服务器,在服务器更新历史.zip文件并解压最新的.zip文件为dist文件夹
    */
   run() {
-    const output = fs.createWriteStream(`${this.localPath}\\dist.zip`);
+    // 写入流
+    const output = fs.createWriteStream(`${this.localPath}\\${this.fileName}.zip`);
+    // 监听压缩进度
     output.on("close", function () {
       console.log(archive.pointer() + " total bytes");
       console.log("archiver has been finalized and the output file descriptor has closed.");
     });
     archive.pipe(output);
     // 压缩包里文件在压缩包根目录下
-    archive.directory(`${this.localPath}\\dist`, false);
+    archive.directory(`${this.localPath}\\${this.fileName}`, false);
     archive.finalize();
     // ssh连接
     ssh
@@ -103,7 +107,7 @@ export default class Deploy {
           });
         });
         const yn: string = await new Promise((resolve) => {
-          readInput.question("确定发布版本么?（y/n): ", (answer) => {
+          readInput.question("确定上传并发布当前版本么?（y/n): ", (answer) => {
             resolve(answer);
           });
         });
@@ -115,7 +119,7 @@ export default class Deploy {
         }
         // 上传压缩包
         console.log("开始上传压缩包...");
-        ssh.putFile(`${this.localPath}\\dist.zip`, `${this.remotePath}/dist_${version}.zip`).then(async () => {
+        ssh.putFile(`${this.localPath}\\${this.fileName}.zip`, `${this.remotePath}/${this.fileName}_${version}.zip`).then(async () => {
           console.log("历史版本更新中...");
           // 删除旧版本压缩包
           while (fileList.length >= this.fileNum) {
@@ -126,9 +130,9 @@ export default class Deploy {
           }
           console.log("更新版本...");
           // 删除dist文件夹
-          ssh.execCommand(`rm dist -rf`, { cwd: this.remotePath }).then(() => {
+          ssh.execCommand(`rm ${this.fileName} -rf`, { cwd: this.remotePath }).then(() => {
             // 解压最新版
-            ssh.execCommand(`unzip -o dist_${version}.zip -d dist`, { cwd: this.remotePath }).then(() => {
+            ssh.execCommand(`unzip -o ${this.fileName}_${version}.zip -d ${this.fileName}`, { cwd: this.remotePath }).then(() => {
               console.log("版本更新完成！");
               // 断开连接
               ssh.dispose();
