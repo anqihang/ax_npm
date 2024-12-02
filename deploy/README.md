@@ -1,7 +1,7 @@
 # install
 
 ```cmd
-npm install @anqihang/deploy@latest
+npm install @anqihang/deploy
 ```
 
 ```js
@@ -19,3 +19,5 @@ const deploy = new Deploy({
 });
 deploy.run();
 ```
+
+简单封装的前端dist文件快速部署到服务器，使用archiver来压缩dist文件，使用node-ssh来上传文件并在服务器解压

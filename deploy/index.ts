@@ -36,7 +36,7 @@ export default class Deploy {
   // 用户名
   username: string = "";
   // 传输文件名称
-  fileName: string = "dist";
+  fileName: string = "";
   constructor(options: {
     localPath: string;
     remotePath: string;
@@ -46,15 +46,17 @@ export default class Deploy {
     fileNum?: number;
     port?: number;
     username?: string;
+    fileName?: string;
   }) {
     this.localPath = options.localPath;
     this.remotePath = options.remotePath;
     this.host = options.host;
-    options.password && (this.password = options.password);
-    options.privateKeyPath && (this.privateKeyPath = options.privateKeyPath);
+    this.password = options.password || "";
+    this.privateKeyPath = options.privateKeyPath || "";
     this.fileNum = options.fileNum || 3;
-    this.port = options.port || 2;
+    this.port = options.port || 22;
     this.username = options.username || "root";
+    this.fileName = options.fileName || "dist";
   }
 
   /**
