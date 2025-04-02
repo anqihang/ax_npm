@@ -199,11 +199,8 @@ export default class Deploy {
           });
         });
         const targetFile = fileList.find((file) => file.name.indexOf(version) >= 0);
-        const preVersion = await ssh.execCommand(`cat version.md`, { cwd: this.remotePath });
         if (!targetFile) {
           console.log("该版本不存在！");
-        } else if (preVersion.stdout.trim() === version) {
-          console.log("该版本已部署，请选择其他版本！");
         } else {
           break;
         }

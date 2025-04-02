@@ -18,4 +18,5 @@ declare module "Deploy" {
 type FileInfo = {
   name: string;
   time: string;
+  deployed: boolean;
 };

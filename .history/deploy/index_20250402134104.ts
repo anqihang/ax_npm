@@ -78,49 +78,6 @@ export default class Deploy {
     }
   }
   /**
-   * @description 查看历史版本
-   */
-  ls() {
-    return new Promise<FileInfo[]>((resolve, reject) => {
-      ssh
-        .connect({
-          host: this.host,
-          port: this.port,
-          username: this.username,
-          password: this.password || void 0,
-          privateKey: this.privateKeyPath ? fs.readFileSync(this.privateKeyPath) : void 0,
-        })
-        .then(async () => {
-          console.log("SSH Connected");
-          // 查询文件/文件夹时间信息
-          const filesStr = (
-            await ssh.execCommand(`ls -l --time-style=long-iso | awk '{print $6, $7, $8}'`, {
-              cwd: this.remotePath,
-            })
-          ).stdout;
-          // 2024-01-01 12:12:12 fileName
-          const fileList: FileInfo[] = filesStr
-            .split("\n")
-            // 排除非.zip文件
-            .filter((file: string) => file.indexOf("zip") >= 0)
-            .map((file: string) => {
-              return {
-                name: file.split(" ")[2],
-                time: file.split(" ")[0] + " " + file.split(" ")[1],
-              };
-            });
-          console.log("历史版本如下：");
-          console.log(fileList.map((file: FileInfo) => `${file.time} ${file.name}`).join("\n"));
-
-          resolve(fileList);
-        })
-        .catch((err) => {
-          console.log("连接失败！");
-          console.log(err);
-        });
-    });
-  }
-  /**
    * @description 压缩dist文件夹成dist.zip并上传到服务器,在服务器更新历史.zip文件并解压最新的.zip文件为dist文件夹
    */
   deploy() {
@@ -134,8 +91,8 @@ export default class Deploy {
     archive.pipe(output);
     // 压缩包里文件在压缩包根目录下
     archive.directory(`${this.localPath}\\${this.fileName}`, false);
-    archive.finalize();
     console.log("压缩完成。");
+    archive.finalize();
 
     this.ls().then(async (fileList: FileInfo[]) => {
       // 将发布的版本号
@@ -177,13 +134,57 @@ export default class Deploy {
         await ssh.execCommand(`rm ${this.fileName} -rf`, { cwd: this.remotePath });
         // 解压最新版
         await ssh.execCommand(`unzip -o ${this.fileName}_${version}.zip -d ${this.fileName}`, { cwd: this.remotePath });
-        // 存储部署的版本号
-        await ssh.execCommand(`echo "${version}" > version.md`, { cwd: this.remotePath });
+        // 更改名称 加_s 表示部署的版本
+        await ssh.execCommand(`mv ${this.fileName}_${version}.zip ${this.fileName}_${version}_s.zip`, { cwd: this.remotePath });
         console.log("版本更新完成！");
         // 断开连接
         ssh.dispose();
         process.exit(0);
       });
+    });
+  }
+  /**
+   * @description 查看历史版本
+   */
+  ls() {
+    return new Promise<FileInfo[]>((resolve, reject) => {
+      ssh
+        .connect({
+          host: this.host,
+          port: this.port,
+          username: this.username,
+          password: this.password || void 0,
+          privateKey: this.privateKeyPath ? fs.readFileSync(this.privateKeyPath) : void 0,
+        })
+        .then(async () => {
+          console.log("SSH Connected");
+          // 查询文件/文件夹时间信息
+          const filesStr = (
+            await ssh.execCommand(`ls -l --time-style=long-iso | awk '{print $6, $7, $8}'`, {
+              cwd: this.remotePath,
+            })
+          ).stdout;
+          // 2024-01-01 12:12:12 fileName
+          const fileList: FileInfo[] = filesStr
+            .split("\n")
+            // 排除非.zip文件
+            .filter((file: string) => file.indexOf("zip") >= 0)
+            .map((file: string) => {
+              return {
+                name: file.split(" ")[2].replace(/_s$/, ""),
+                time: file.split(" ")[0] + " " + file.split(" ")[1],
+                deployed: file.split(" ")[2].indexOf("_s") >= 0,
+              };
+            });
+          console.log("历史版本如下：");
+          console.log(fileList.map((file: FileInfo) => `${file.time} ${file.name}`).join("\n"));
+
+          resolve(fileList);
+        })
+        .catch((err) => {
+          console.log("连接失败！");
+          console.log(err);
+        });
     });
   }
   /**
@@ -198,11 +199,7 @@ export default class Deploy {
             resolve(answer);
           });
         });
-        const targetFile = fileList.find((file) => file.name.indexOf(version) >= 0);
-        const preVersion = await ssh.execCommand(`cat version.md`, { cwd: this.remotePath });
-        if (!targetFile) {
-          console.log("该版本不存在！");
-        } else if (preVersion.stdout.trim() === version) {
+        if (fileList.find((file) => file.name.indexOf(version) >= 0)?.deployed) {
           console.log("该版本已部署，请选择其他版本！");
         } else {
           break;
@@ -227,6 +224,8 @@ export default class Deploy {
       await ssh.execCommand(`rm ${this.fileName} -rf`, { cwd: this.remotePath });
       // 解压指定版本
       await ssh.execCommand(`unzip -o ${this.fileName}_${version}.zip -d ${this.fileName}`, { cwd: this.remotePath });
+      // 更改名称 加_s 表示部署的版本
+      await ssh.execCommand(`mv ${this.fileName}_${version}.zip ${this.fileName}_${version}_s.zip`, { cwd: this.remotePath });
       console.log("版本更新完成！");
       // 断开连接
       ssh.dispose();
