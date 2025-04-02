@@ -37,6 +37,7 @@ export default class Deploy {
   username: string = "";
   // 传输文件名称
   fileName: string = "";
+  dockerName: string = "";
   constructor(options: {
     localPath: string;
     remotePath: string;
@@ -47,6 +48,7 @@ export default class Deploy {
     port?: number;
     username?: string;
     fileName?: string;
+    dockerName?: string;
   }) {
     this.localPath = options.localPath;
     this.remotePath = options.remotePath;
@@ -57,6 +59,7 @@ export default class Deploy {
     this.port = options.port || 22;
     this.username = options.username || "root";
     this.fileName = options.fileName || "dist";
+    this.dockerName = options.dockerName || "";
   }
   run() {
     switch (process.argv[2]) {
@@ -180,6 +183,10 @@ export default class Deploy {
         // 存储部署的版本号
         await ssh.execCommand(`echo "${version}" > version.md`, { cwd: this.remotePath });
         console.log("版本更新完成！");
+        if (this.dockerName) {
+          await ssh.execCommand(`docker restart ${this.dockerName}`, { cwd: this.remotePath });
+          console.log("docker 已重启");
+        }
         // 断开连接
         ssh.dispose();
         process.exit(0);
@@ -228,6 +235,10 @@ export default class Deploy {
       // 解压指定版本
       await ssh.execCommand(`unzip -o ${this.fileName}_${version}.zip -d ${this.fileName}`, { cwd: this.remotePath });
       console.log("版本更新完成！");
+      if (this.dockerName) {
+        await ssh.execCommand(`docker restart ${this.dockerName}`, { cwd: this.remotePath });
+        console.log("docker 已重启");
+      }
       // 断开连接
       ssh.dispose();
       process.exit(0);
