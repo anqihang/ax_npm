@@ -184,6 +184,7 @@ export default class Deploy {
         await ssh.execCommand(`echo "${version}" > version.md`, { cwd: this.remotePath });
         console.log("版本更新完成！");
         if (this.dockerName) {
+          console.log(`重启docker --name ${this.dockerName}...`);
           await ssh.execCommand(`docker restart ${this.dockerName}`, { cwd: this.remotePath });
           console.log("docker 已重启");
         }
@@ -236,6 +237,7 @@ export default class Deploy {
       await ssh.execCommand(`unzip -o ${this.fileName}_${version}.zip -d ${this.fileName}`, { cwd: this.remotePath });
       console.log("版本更新完成！");
       if (this.dockerName) {
+        console.log(`重启docker --name ${this.dockerName}...`);
         await ssh.execCommand(`docker restart ${this.dockerName}`, { cwd: this.remotePath });
         console.log("docker 已重启");
       }
